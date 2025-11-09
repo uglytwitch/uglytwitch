@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="admin">
+    <div class="admin-topnav">
+        {% include "_admin_nav.html" %}
+    </div>
+    {% include "_admin_flashes.html" %}
+    <header class="admin-header">
+        <div class="admin-titlebar">
+            <h2>Admin: Streamers</h2>
+        </div>
+        <div class="admin-actions">
+            <a class="button admin-new" href="{{ url_for('admin_streamers_new') }}">New Streamer</a>
+        </div>
+    </header>
+
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Icon</th>
+                <th>Name</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in streamers %}
+            <tr>
+                <td>{{ s['id'] }}</td>
+                <td>{% if s['icon_url'] %}<img src="{{ s['icon_url'] }}" alt="{{ s['name'] }}" style="width:32px;height:32px;border-radius:50%">{% endif %}</td>
+                <td>{{ s['name'] }}</td>
+                <td class="admin-actions">
+                    <a class="button button-secondary" href="{{ url_for('admin_streamers_edit', streamer_id=s['id']) }}">Edit</a>
+                    <form method="post" action="{{ url_for('admin_streamers_delete', streamer_id=s['id']) }}" onsubmit="return confirm('Delete this streamer?');">
+                        <button type="submit" class="button button-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td class="empty" colspan="4">No streamers yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}
+
+

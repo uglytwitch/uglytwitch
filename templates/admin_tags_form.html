@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="admin">
+  <div class="admin-topnav">
+    {% include "_admin_nav.html" %}
+  </div>
+  {% include "_admin_flashes.html" %}
+  <header class="admin-header">
+    <div class="admin-titlebar">
+      <h2>Admin: {{ 'New Tag' if mode=='new' else 'Edit Tag' }}</h2>
+    </div>
+  </header>
+  <form class="form" method="post">
+    <div class="form-field">
+      <label for="name">Name</label>
+      <input type="text" id="name" name="name" value="{{ tag['name'] if tag else '' }}" required />
+    </div>
+    <div class="form-actions">
+      <button class="button" type="submit">{{ 'Create' if mode=='new' else 'Save' }}</button>
+      <a class="button button-secondary" href="{{ url_for('admin_tags') }}">Cancel</a>
+    </div>
+  </form>
+</section>
+{% endblock %}
+
+

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Ugly Side of Twitch</title>
+	<link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+	<script defer src="{{ url_for('static', filename='app.js') }}"></script>
+</head>
+<body{% if admin_mode or (not pages or pages|length == 0) %} class="{% if admin_mode %}admin-mode{% endif %}{% if (not pages or pages|length == 0) %}{% if admin_mode %} {% endif %}no-footer{% endif %}"{% endif %}>
+	{% if not admin_mode %}
+	<header class="site-header">
+		<div class="container header-inner">
+			<h1 class="site-title"><a href="{{ url_for('index') }}">Ugly Side of Twitch</a></h1>
+			<p class="site-tagline">A curated timeline of some of the ugliest things said on Twitch streams</p>
+		</div>
+	</header>
+	{% endif %}
+
+	{% if not admin_mode %}
+		{% include "_admin_flashes.html" %}
+	{% endif %}
+
+	<main class="container">
+		{% block content %}{% endblock %}
+	</main>
+
+{% if not admin_mode and pages and pages|length > 0 %}
+	<footer class="site-footer">
+		<div class="container footer-inner">
+			<p class="footer-list">
+				{% if pages and pages|length > 0 %}
+					{% for pg in pages %}
+						<span class="footer-item"><a href="#" data-modal="page-{{ pg['id'] }}">{{ pg['title'] }}</a></span>
+					{% endfor %}
+				{% endif %}
+			</p>
+		</div>
+	</footer>
+	{% endif %}
+
+	<!-- Modals -->
+	{% if not admin_mode and pages and pages|length > 0 %}
+		{% for pg in pages %}
+		<div class="modal" id="modal-page-{{ pg['id'] }}" aria-hidden="true" role="dialog" aria-modal="true">
+			<div class="modal-dialog">
+				<header class="modal-header"><h3>{{ pg['title'] }}</h3><button class="modal-close" data-close>&times;</button></header>
+				<div class="modal-body">
+					{{ pg['content']|safe }}
+				</div>
+			</div>
+		</div>
+		{% endfor %}
+	{% endif %}
+</body>
+</html>
+
+

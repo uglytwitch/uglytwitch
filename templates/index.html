@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="layout">
+	{% if total and total > 0 %}
+	<aside class="sidebar">
+		<h3 class="sidebar-title">Sentinel</h3>
+		<div class="sidebar-inner">
+			<ul class="month-nav" id="month-nav">
+				{% for g in groups %}
+				<li>
+					<span class="month-label">{{ g.month_name }} {{ g.year }}</span>
+					<span class="count">{{ g.events|length }}</span>
+					<ul class="event-nav" data-anchor="{{ g.anchor }}">
+						{% for ev in g.events %}
+						{% set es = event_streamers.get(ev['id']) if event_streamers else None %}
+						{% set tag_ids = event_tags_map.get(ev['id']) if event_tags_map else [] %}
+						<li>
+							<a href="#{{ ev['slug'] or ev['id'] }}"
+							   {% if es %}data-streamer-id="{{ es.id }}"{% endif %}
+							   {% if tag_ids %}data-tag-ids="{{ tag_ids | join(',') }}"{% endif %}>
+								{{ ev['title'] }}
+							</a>
+						</li>
+						{% endfor %}
+					</ul>
+				</li>
+				{% endfor %}
+			</ul>
+		</div>
+	</aside>
+	{% endif %}
+    <section class="timeline">
+		<div id="timeline-root">
+			<div id="top-sentinel" style="height: 1px;"></div>
+			<div class="timeline-cta">
+				<a class="cta-x" href="https://x.com/uglysideoftwitch" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)">
+					<span>Support us by following on</span>
+					<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M18.244 2H21L13.5 10.09 22 22h-6.557l-4.63-6.065L5.3 22H2.5l7.963-9.1L2 2h6.68l4.186 5.66L18.244 2Zm-1.152 18h1.8L7.01 4h-1.87l11.952 16Z"/></svg>
+				</a>
+			</div>
+		{% for g in groups %}
+			<h3 class="timeline-month" id="{{ g.anchor }}">{{ g.month_name }} {{ g.year }}</h3>
+			<div class="timeline-list" data-anchor="{{ g.anchor }}">
+			{% for event in g.events %}
+			{% set es = event_streamers.get(event['id']) if event_streamers else None %}
+			{% set tag_ids = event_tags_map.get(event['id']) if event_tags_map else [] %}
+			<article class="timeline-item" id="{{ (event['slug'] or event['id']) }}" data-streamer-id="{{ es.id if es else '' }}" data-tag-ids="{{ (tag_ids | join(',')) if tag_ids else '' }}">
+				<div class="timeline-dot" aria-hidden="true"></div>
+				<div class="timeline-card">
+					<header class="timeline-card-header">
+						<h3 class="timeline-title">
+							<a href="#{{ (event['slug'] or event['id']) }}">{{ event['title'] }}</a>
+						</h3>
+						<div class="timeline-meta">
+							<time class="timeline-date">{{ format_datetime(event['created_at']) }}</time>
+							{% if es %}
+							<div class="timeline-streamer">
+								<span class="streamer-inline">
+									{% if es.icon_url %}<img src="{{ es.icon_url }}" alt="" class="streamer-inline-icon">{% endif %}
+									{{ es.name }}
+								</span>
+							</div>
+							{% endif %}
+						</div>
+					</header>
+					<div class="timeline-body">
+						<div class="timeline-video">
+							{% set vids = videos_map.get(event['id']) if videos_map else None %}
+							{% if vids %}
+								{{ render_video_player(vids, event['thumbnail_url']) }}
+							{% else %}
+								<p>No video available.</p>
+							{% endif %}
+						</div>
+						<p class="timeline-text">{{ excerpt(event['body']) }}</p>
+						<div class="body-actions">
+							<button class="button button-secondary copy-link" data-key="{{ (event['slug'] or event['id']) }}">Copy Link</button>
+							{% if event['original_clip_url'] %}
+							{% set _id = (event['original_clip_url'].rsplit('/', 1)[-1]).split('?')[0] %}
+							<span class="timeline-original-inline">
+								Archived directly from Twitch Clip ID
+								<a class="mono-url" href="{{ event['original_clip_url'] }}" target="_blank" rel="noopener noreferrer">{{ _id }}</a>
+							</span>
+							{% endif %}
+						</div>
+						{% set eid_tags = event_tags_map.get(event['id']) if event_tags_map else [] %}
+						{% if eid_tags and tags %}
+						<div class="event-tags">
+							{% for t in tags %}
+								{% if t['id'] in eid_tags %}
+									<span class="tag-chip"><span class="tag-name">{{ t['name'] }}</span></span>
+								{% endif %}
+							{% endfor %}
+						</div>
+						{% endif %}
+					</div>
+				</div>
+			</article>
+			{% endfor %}
+			</div>
+		{% else %}
+		<p>No events yet.</p>
+		{% endfor %}
+		</div>
+		<div id="infinite-sentinel" style="height: 1px;"></div>
+		<script id="hot-config" type="application/json">
+{"nextOffset": {{ events|length }}, "total": {{ total }}, "limit": 15, "apiUrl": "{{ url_for('api_events') }}", "metaUrl": "{{ url_for('api_events_meta') }}"}
+		</script>
+		<script id="hot-tags" type="application/json">
+{{ tags_json|tojson }}
+		</script>
+		<script>
+			window.HOT_CONFIG = JSON.parse(document.getElementById('hot-config').textContent || "{}");
+			window.HOT_TAGS = JSON.parse(document.getElementById('hot-tags').textContent || "[]");
+		</script>
+    </section>
+    <aside class="sidebar-right">
+        {% if streamers and streamers|length > 0 %}
+        <div class="sidebar-title-row">
+            <h3 class="sidebar-title">Streamers</h3>
+            <button type="button" class="sidebar-clear clear-streamers" style="visibility:hidden;">Clear</button>
+        </div>
+        <div class="sidebar-inner">
+            <ul class="streamer-filter">
+                {% set selected_set = (selected_streamers.split(',') if selected_streamers else []) %}
+                {% for s in streamers %}
+                {% set is_selected = (selected_set and (s['id']|string) in selected_set) %}
+                <li class="pill-row">
+                    <a class="streamer-pill{% if is_selected %} active{% endif %}"
+                       href="#"
+                       data-streamer-id="{{ s['id'] }}">
+                        {% if s['icon_url'] %}<img src="{{ s['icon_url'] }}" alt="" class="streamer-icon">{% endif %}
+                        <span class="streamer-name">{{ s['name'] }}</span>
+                    </a>
+                    <span class="pill-count pill-count--streamer">{{ s['event_count'] }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        {% if tags and tags|length > 0 %}
+        <div class="sidebar-title-row" style="margin-top:12px;">
+            <h3 class="sidebar-title" style="margin:0;">Tags</h3>
+            <button type="button" class="sidebar-clear clear-tags" style="visibility:hidden;">Clear</button>
+        </div>
+        <div class="sidebar-inner">
+            <ul class="tag-filter">
+                {% for t in tags %}
+                <li class="pill-row">
+                    <a class="tag-pill" href="#" data-tag-id="{{ t['id'] }}"><span class="tag-name">{{ t['name'] }}</span></a>
+                    <sup class="pill-count pill-count--tag">{{ t['event_count'] }}</sup>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </aside>
+</div>
+{% endblock %}
+
+

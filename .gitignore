@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Local runtime
+database.db
+logs/
+
+# Local env files
+.env
+env.txt
+
+# OS/editor
+.DS_Store
+.idea/
+.vscode/
+
+# Local tools and binaries (large)
+tools/ffmpeg/**
+!tools/ffmpeg/README.txt
+*.log
+NUL
+
+

@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="admin">
+    <div class="admin-topnav">
+        {% include "_admin_nav.html" %}
+    </div>
+    {% include "_admin_flashes.html" %}
+    <header class="admin-header">
+        <div class="admin-titlebar">
+            <h2>Admin: {{ 'New Streamer' if mode == 'new' else 'Edit Streamer' }}</h2>
+        </div>
+    </header>
+    <form method="post" class="form" enctype="multipart/form-data">
+        <div class="form-field">
+            <label for="name">Name</label>
+            <input id="name" name="name" type="text" required value="{{ (streamer['name'] if streamer) or '' }}" />
+        </div>
+		<div class="form-field">
+			<label for="icon_file">Icon</label>
+			<div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+				<input id="icon_file" name="icon_file" type="file" accept="image/png,.png" />
+				<button type="button" id="clear_icon_file" class="button button-secondary">Clear</button>
+				{% if streamer and streamer['icon_url'] %}
+				<img src="{{ streamer['icon_url'] }}" alt="{{ streamer['name'] }}" style="width:32px;height:32px;border-radius:50%">
+				{% endif %}
+			</div>
+			<small>Icons must be PNG format and a square 32–128px.</small>
+		</div>
+        <div class="form-actions">
+			<button type="submit" class="button">{{ 'Create' if mode == 'new' else 'Save' }}</button>
+            <a class="button button-secondary" href="{{ url_for('admin_streamers') }}">Cancel</a>
+        </div>
+    </form>
+	<script>
+	(function(){
+		const fileInput = document.getElementById('icon_file');
+		const clearBtn = document.getElementById('clear_icon_file');
+		if (clearBtn && fileInput) {
+			clearBtn.addEventListener('click', function(e){
+				e.preventDefault();
+				fileInput.value = '';
+			});
+		}
+		// Client-side PNG validation to reinforce accept filter
+		if (fileInput) {
+			fileInput.addEventListener('change', function(){
+				const f = fileInput.files && fileInput.files[0];
+				if (!f) return;
+				const isPng = (f.type === 'image/png') || (/\.png$/i.test(f.name));
+				if (!isPng) {
+					alert('Please select a PNG image.');
+					fileInput.value = '';
+					return;
+				}
+				// Validate square and size range 32..128
+				const url = URL.createObjectURL(f);
+				const img = new Image();
+				img.onload = function(){
+					try {
+						const w = img.naturalWidth, h = img.naturalHeight;
+						if (w !== h) {
+							alert('Icon must be square (width must equal height).');
+							fileInput.value = '';
+							return;
+						}
+						if (w < 32 || h < 32) {
+							alert('Icon too small (minimum 32×32).');
+							fileInput.value = '';
+							return;
+						}
+						if (w > 128 || h > 128) {
+							// Allow; server will downscale, but warn user
+							// No action needed, just proceed
+						}
+					} finally {
+						URL.revokeObjectURL(url);
+					}
+				};
+				img.onerror = function(){
+					URL.revokeObjectURL(url);
+				};
+				img.src = url;
+			});
+		}
+	})();
+	</script>
+</section>
+{% endblock %}
+
+

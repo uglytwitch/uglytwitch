@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="admin">
+    <div class="admin-topnav">
+        {% include "_admin_nav.html" %}
+    </div>
+    {% include "_admin_flashes.html" %}
+    <header class="admin-header">
+        <div class="admin-titlebar">
+            <h2>Admin: {{ 'New Event' if mode == 'new' else 'Edit Event' }}</h2>
+        </div>
+    </header>
+	<form method="post" class="form" enctype="multipart/form-data" id="event-form" data-mode="{{ mode }}">
+		<div class="form-field">
+			<label for="title">Title</label>
+			<input id="title" name="title" type="text" required value="{{ (event['title'] if event) or '' }}" />
+		</div>
+		<div class="form-field">
+			<label for="slug">Slug</label>
+			<input id="slug" name="slug" type="text" required pattern="[a-z0-9-]+" placeholder="hasan-shocks-dog" value="{{ (event['slug'] if event) or '' }}" />
+		</div>
+		<div class="form-field">
+			<label for="event_date">Date</label>
+			<input id="event_date" name="event_date" type="date" required value="{{ format_date_input(event['created_at']) if event else '' }}" />
+		</div>
+		{% if mode == 'new' %}
+		<div class="either-or-group">
+			<div class="form-field">
+				<label for="clip_url">Twitch Clip URL</label>
+				<input id="clip_url" name="clip_url" type="url" required placeholder="https://www.twitch.tv/…" value="" />
+			</div>
+			<div class="form-field">
+				<label for="clip_file">Video file</label>
+				<div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+					<input id="clip_file" name="clip_file" type="file" accept="video/*" />
+					<button type="button" id="clear_file" class="button button-secondary">Clear</button>
+				</div>
+				<small>Provide either a Twitch Clip URL or upload a video file. If both are provided, the uploaded file is used.</small>
+			</div>
+		</div>
+		<script>
+		(function(){
+			const urlInput = document.getElementById('clip_url');
+			const fileInput = document.getElementById('clip_file');
+			const clearBtn = document.getElementById('clear_file');
+			function syncState(){
+				if (fileInput && fileInput.files && fileInput.files.length > 0){
+					urlInput.setAttribute('disabled','disabled');
+					urlInput.removeAttribute('required');
+				}else{
+					urlInput.removeAttribute('disabled');
+					urlInput.setAttribute('required','required');
+				}
+			}
+			if (fileInput){ fileInput.addEventListener('change', syncState); }
+			if (clearBtn){ clearBtn.addEventListener('click', function(){ fileInput.value=''; syncState(); }); }
+			syncState();
+		})();
+		</script>
+		{% else %}
+		<div class="form-field">
+			<label>Video</label>
+			<div class="timeline-video">
+				{% if vids %}
+					{{ render_video_player(vids, event['thumbnail_url']) }}
+				{% else %}
+					<p>No video available.</p>
+				{% endif %}
+			</div>
+		</div>
+		{% endif %}
+		<div class="form-field">
+			<label for="body">Body</label>
+			<textarea id="body" name="body" rows="8" required>{{ (event['body'] if event) or '' }}</textarea>
+		</div>
+		<div class="form-field">
+			<label>Streamer</label>
+			<div style="display:grid; gap:8px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));" id="streamer-select">
+				{% for s in streamers or [] %}
+					<label style="display:flex; align-items:center; gap:8px; border:1px solid var(--line); padding:8px; border-radius:8px; cursor:pointer;">
+						<input type="radio" name="streamer_id" value="{{ s['id'] }}" {% if selected_streamer_ids and (s['id'] in selected_streamer_ids) %}checked{% endif %} required />
+						{% if s['icon_url'] %}<img src="{{ s['icon_url'] }}" alt="" style="width:20px;height:20px;border-radius:50%;object-fit:cover;">{% endif %}
+						<span>{{ s['name'] }}</span>
+					</label>
+				{% endfor %}
+			</div>
+		</div>
+		<div class="form-field">
+			<label>Tags</label>
+			<div style="display:grid; gap:8px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));">
+				{% for t in tags or [] %}
+					<label style="display:flex; align-items:center; gap:8px; border:1px dashed var(--line); padding:8px; border-radius:8px; cursor:pointer;">
+						<input type="checkbox" name="tag_ids" value="{{ t['id'] }}" {% if selected_tag_ids and (t['id'] in selected_tag_ids) %}checked{% endif %} />
+						<span>{{ t['name'] }}</span>
+					</label>
+				{% endfor %}
+			</div>
+		</div>
+		<div class="form-actions">
+			<button type="submit" class="button">{{ 'Create' if mode == 'new' else 'Save' }}</button>
+			<a class="button button-secondary" href="{{ url_for('admin_events_list') }}">Cancel</a>
+		</div>
+	</form>
+	<script>
+	(function(){
+		const form = document.getElementById('event-form');
+		if (!form) return;
+		const mode = form.getAttribute('data-mode') || 'new';
+		const clipUrl = document.getElementById('clip_url');
+		const fileInput = document.getElementById('clip_file');
+		form.addEventListener('submit', function(e){
+			// Require exactly one streamer (radio group must have a selection)
+			const checked = form.querySelector('input[name="streamer_id"]:checked');
+			if (!checked){
+				e.preventDefault();
+				const firstRadio = form.querySelector('input[name="streamer_id"]');
+				if (firstRadio){
+					firstRadio.setCustomValidity('Please select a streamer.');
+					firstRadio.reportValidity();
+					// Clear custom validity so future attempts re-run native checks
+					setTimeout(() => firstRadio.setCustomValidity(''), 0);
+				}
+				return;
+			}
+			// On create, enforce either Clip URL or file clientside
+			if (mode === 'new'){
+				const hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
+				const hasUrl = clipUrl && clipUrl.value.trim().length > 0;
+				if (!hasFile && !hasUrl){
+					e.preventDefault();
+					if (clipUrl){
+						clipUrl.removeAttribute('disabled');
+						clipUrl.setCustomValidity('Provide a Twitch Clip URL or upload a video file.');
+						clipUrl.reportValidity();
+						setTimeout(() => clipUrl.setCustomValidity(''), 0);
+					}
+					return;
+				}
+			}
+		}, false);
+	})();
+	</script>
+</section>
+{% endblock %}
+
+

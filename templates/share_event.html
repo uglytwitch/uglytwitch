@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>{{ title }}</title>
+	<link rel="canonical" href="{{ canonical_main }}" />
+	<!-- Open Graph -->
+	<meta property="og:type" content="video.other" />
+	<meta property="og:title" content="{{ title }}" />
+	<meta property="og:description" content="{{ desc }}" />
+	{% if og_image %}<meta property="og:image" content="{{ og_image }}" />{% endif %}
+	<meta property="og:url" content="{{ share_url }}" />
+	{% if og_video %}
+	<meta property="og:video" content="{{ og_video }}" />
+	<meta property="og:video:type" content="video/mp4" />
+	{% endif %}
+	<!-- Twitter -->
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:title" content="{{ title }}" />
+	<meta name="twitter:description" content="{{ desc }}" />
+	{% if og_image %}<meta name="twitter:image" content="{{ og_image }}" />{% endif %}
+	<!-- Fast redirect for users -->
+	<meta http-equiv="refresh" content="0;url={{ canonical_main }}">
+</head>
+<body>
+	<p><a href="{{ canonical_main }}">Continue to the event…</a></p>
+</body>
+</html>
+
+

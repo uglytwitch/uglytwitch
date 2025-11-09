@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="admin">
+    <div class="admin-topnav">
+        {% include "_admin_nav.html" %}
+    </div>
+    {% include "_admin_flashes.html" %}
+    <header class="admin-header">
+        <div class="admin-titlebar">
+            <h2>Admin: Events</h2>
+        </div>
+        <div class="admin-actions">
+            <a class="button admin-new" href="{{ url_for('admin_events_new') }}">New Event</a>
+        </div>
+    </header>
+
+	<table class="admin-table">
+		<thead>
+			<tr>
+				<th>ID</th>
+				<th>Slug</th>
+				<th>Title</th>
+				<th>Streamer</th>
+				<th>Tags</th>
+				<th>Created</th>
+				<th>Actions</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for event in events %}
+			<tr>
+				<td>{{ event['id'] }}</td>
+				<td>{{ event['slug'] or '' }}</td>
+				<td><a href="{{ url_for('index') }}#{{ event['slug'] or event['id'] }}">{{ event['title'] }}</a></td>
+				<td>
+					{% set es = (event_streamers.get(event['id']) if event_streamers else None) %}
+					{{ es.name if es else '' }}
+				</td>
+				<td>
+					{% set tids = (event_tags_map.get(event['id']) if event_tags_map else []) %}
+					{% if tids and tags_by_id %}
+						{% for tid in tids %}
+							{{ tags_by_id.get(tid|int) }}{% if not loop.last %}, {% endif %}
+						{% endfor %}
+					{% endif %}
+				</td>
+				<td>{{ format_datetime(event['created_at']) }}</td>
+				<td class="admin-actions">
+					<a class="button button-secondary" href="{{ url_for('admin_events_edit', event_id=event['id']) }}">Edit</a>
+					<form method="post" action="{{ url_for('admin_events_delete', event_id=event['id']) }}" onsubmit="return confirm('Delete this event?');">
+						<button type="submit" class="button button-danger">Delete</button>
+					</form>
+				</td>
+			</tr>
+			{% else %}
+			<tr>
+				<td class="empty" colspan="6">No events yet.</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+</section>
+{% endblock %}
+
+

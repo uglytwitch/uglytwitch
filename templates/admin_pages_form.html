@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="admin">
+    <div class="admin-topnav">
+        {% include "_admin_nav.html" %}
+    </div>
+    {% include "_admin_flashes.html" %}
+    <header class="admin-header">
+        <div class="admin-titlebar">
+            <h2>Admin: {{ 'New Page' if mode == 'new' else 'Edit Page' }}</h2>
+        </div>
+    </header>
+    <form method="post" class="form">
+        <div class="form-field">
+            <label for="title">Title</label>
+            <input type="text" id="title" name="title" value="{{ page['title'] if page else '' }}" required>
+        </div>
+        <div class="form-field">
+            <label for="position">Position</label>
+            <input type="number" id="position" name="position" min="1" max="{{ (max_position + 1) if max_position is defined else 1 }}" step="1" value="{{ page['position'] if page else (max_position + 1) }}">
+        </div>
+        <div class="form-field">
+            <label style="display:inline-flex; gap:8px; align-items:center;">
+                <input type="checkbox" id="visible" name="visible" {% if page and page['visible'] %}checked{% elif mode == 'new' %}checked{% endif %}>
+                <span>Visible</span>
+            </label>
+        </div>
+        <div class="form-field">
+            <label for="content">Content</label>
+            <textarea id="content" name="content" rows="10">{{ page['content'] if page else '' }}</textarea>
+            <small>HTML is allowed.</small>
+        </div>
+        <div class="form-actions">
+            <button class="button" type="submit">{{ 'Create' if mode == 'new' else 'Save' }}</button>
+            <a class="button button-secondary" href="{{ url_for('admin_pages') }}">Cancel</a>
+        </div>
+    </form>
+</section>
+{% endblock %}
+
+

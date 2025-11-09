@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="admin">
+    <div class="admin-topnav">
+        {% include "_admin_nav.html" %}
+    </div>
+    {% include "_admin_flashes.html" %}
+    <header class="admin-header">
+        <div class="admin-titlebar">
+            <h2>Admin: Pages</h2>
+        </div>
+        <div class="admin-actions">
+            <a class="button admin-new" href="{{ url_for('admin_pages_new') }}">New Page</a>
+        </div>
+    </header>
+
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Position</th>
+                <th>Visible</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pg in pages %}
+            <tr>
+                <td>{{ pg['id'] }}</td>
+                <td>{{ pg['title'] }}</td>
+                <td>{{ pg['position'] }}</td>
+				<td>{{ '✅' if pg['visible'] else '❌' }}</td>
+                <td class="admin-actions">
+                    <a class="button button-secondary" href="{{ url_for('admin_pages_edit', page_id=pg['id']) }}">Edit</a>
+                    <form method="post" action="{{ url_for('admin_pages_delete', page_id=pg['id']) }}" onsubmit="return confirm('Delete this page?');">
+                        <button type="submit" class="button button-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+				<td class="empty" colspan="5">No pages yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}
+
+

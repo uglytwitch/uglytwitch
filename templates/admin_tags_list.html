@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="admin">
+  <div class="admin-topnav">
+    {% include "_admin_nav.html" %}
+  </div>
+  {% include "_admin_flashes.html" %}
+  <header class="admin-header">
+    <div class="admin-titlebar">
+      <h2>Admin: Tags</h2>
+    </div>
+    <div class="admin-actions">
+      <a class="button admin-new" href="{{ url_for('admin_tags_new') }}">New Tag</a>
+    </div>
+  </header>
+  <table class="admin-table">
+    <thead>
+      <tr><th>ID</th><th>Name</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+    {% for t in tags %}
+      <tr>
+        <td>{{ t['id'] }}</td>
+        <td>{{ t['name'] }}</td>
+        <td class="admin-actions">
+          <a class="button button-secondary" href="{{ url_for('admin_tags_edit', tag_id=t['id']) }}">Edit</a>
+          <form method="post" action="{{ url_for('admin_tags_delete', tag_id=t['id']) }}" onsubmit="return confirm('Delete this tag?');">
+            <button type="submit" class="button button-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td class="empty" colspan="3">No tags yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}
+
+
